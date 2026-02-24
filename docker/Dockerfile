@@ -1,9 +1,7 @@
-FROM eclipse-temurin:17-jdk-jammy
+FROM tomcat:10.1-jdk17
 
-WORKDIR /app
+RUN rm -rf /usr/local/tomcat/webapps/*
 
-COPY app.jar app.jar
+COPY ngoapp.war /usr/local/tomcat/webapps/
 
 EXPOSE 8080
-
-ENTRYPOINT ["java","-jar","app.jar"]

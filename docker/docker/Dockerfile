@@ -1,5 +1,7 @@
-FROM eclipse-temurin:17-jdk
-WORKDIR /app
-COPY ngoapp-0.0.1-SNAPSHOT.jar app.jar
+FROM tomcat:10.1-jdk17
+
+RUN rm -rf /usr/local/tomcat/webapps/*
+
+COPY ngoapp.war /usr/local/tomcat/webapps/
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]

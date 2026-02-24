@@ -1,54 +1,46 @@
 ---
-- name: Deploy NGO Application with MySQL
-  hosts: local
+- name: Deploy NGO WAR Application on Tomcat
+  hosts: web
   become: yes
 
   tasks:
-
     - name: Update apt packages
       apt:
         update_cache: yes
 
-    - name: Install Docker
+    - name: Install Java
       apt:
-        name: docker.io
+        name: openjdk-17-jdk
         state: present
 
-    - name: Start and enable Docker
-      service:
-        name: docker
-        state: started
-        enabled: yes
+    - name: Download Tomcat
+      get_url:
+        url: https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.18/bin/apache-tomcat-10.1.18.tar.gz
+        dest: /tmp/tomcat.tar.gz
 
-    - name: Create Docker network
-      docker_network:
-        name: ngo-network
+    - name: Create Tomcat directory
+      file:
+        path: /opt/tomcat
+        state: directory
 
-    - name: Run MySQL container
-      docker_container:
-        name: ngo-mysql
-        image: mysql:8
-        state: started
-        restart_policy: always
-        networks:
-          - name: ngo-network
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: ngo_db
-        ports:
-          - "3306:3306"
+    - name: Extract Tomcat
+      unarchive:
+        src: /tmp/tomcat.tar.gz
+        dest: /opt/tomcat
+        remote_src: yes
+        extra_opts: [--strip-components=1]
 
-    - name: Run NGO Backend container
-      docker_container:
-        name: ngo-app
-        image: ngo-backend:latest
-        state: started
-        restart_policy: always
-        networks:
-          - name: ngo-network
-        ports:
-          - "8080:8080"
-        env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://ngo-mysql:3306/ngo_db
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root
+    - name: Give execute permission
+      file:
+        path: /opt/tomcat/bin
+        mode: "0755"
+        recurse: yes
+
+    - name: Copy WAR file
+      copy:
+        src: ../application/ngoapp-0.0.1-SNAPSHOT.war
+        dest: /opt/tomcat/webapps/ngoapp.war
+        mode: "0644"
+
+    - name: Start Tomcat
+      shell: /opt/tomcat/bin/startup.sh
