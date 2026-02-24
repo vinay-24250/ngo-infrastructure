@@ -4,6 +4,7 @@
   become: yes
 
   tasks:
+
     - name: Update apt packages
       apt:
         update_cache: yes
@@ -12,6 +13,11 @@
       apt:
         name: openjdk-17-jdk
         state: present
+
+    - name: Remove old Tomcat (if exists)
+      file:
+        path: /opt/tomcat
+        state: absent
 
     - name: Download Tomcat
       get_url:
@@ -30,15 +36,18 @@
         remote_src: yes
         extra_opts: [--strip-components=1]
 
-    - name: Give execute permission
+    - name: Set execute permissions
       file:
         path: /opt/tomcat/bin
         mode: "0755"
         recurse: yes
 
+    - name: Remove default webapps
+      shell: rm -rf /opt/tomcat/webapps/*
+
     - name: Copy WAR file
       copy:
-        src: ../application/ngoapp-0.0.1-SNAPSHOT.war
+        src: /mnt/c/Users/rohit/Downloads/NGO/NGO/target/ngoapp-0.0.1-SNAPSHOT.war
         dest: /opt/tomcat/webapps/ngoapp.war
         mode: "0644"
 
